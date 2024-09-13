@@ -6,7 +6,7 @@ import pathlib
 
 from ..proxy_causal.data_class import PVTrainDataSet, PVTestDataSet
 
-DATA_PATH = pathlib.Path(__file__).resolve().parent.parent.parent.parent.joinpath("data/")
+DATA_PATH = pathlib.Path(__file__).resolve().parent.parent.parent.joinpath("data/")
 
 
 def image_id(latent_bases: np.ndarray, posX_id_arr: np.ndarray, posY_id_arr: np.ndarray,
@@ -20,22 +20,14 @@ def image_id(latent_bases: np.ndarray, posX_id_arr: np.ndarray, posY_id_arr: np.
 
 
 def structural_func(image, weights):
-    return (image.dot(weights)[:, 0] ** 2 - 3000) / 500
-
-def cal_weight():
-    weights = np.empty((64, 64))
-    for i in range(64):
-        for j in range(64):
-            weights[i, j] = (np.abs(32 - j))
-    return weights.reshape(64*64, 1) / 32
+    return (np.mean((image.dot(weights)) ** 2, axis=1) - 5000) / 1000
 
 
 def generate_test_dsprite() -> PVTestDataSet:
     with FileLock("./data.lock"):
         dataset_zip = np.load(DATA_PATH.joinpath("dsprites_ndarray_co1sh3sc6or40x32y32_64x64.npz"),
                               allow_pickle=True, encoding="bytes")
-
-    weights = cal_weight()
+        weights = np.load(DATA_PATH.joinpath("dsprite_mat.npy"))
 
     imgs = dataset_zip['imgs']
     latents_values = dataset_zip['latents_values']
@@ -61,8 +53,8 @@ def generate_test_dsprite() -> PVTestDataSet:
     return PVTestDataSet(treatment=treatment, structural=structural)
 
 
-def generate_train_dsprite(n_sample: int,
-                            rand_seed: int = 42, **kwargs):
+def generate_dsprite_pv(n_sample: int,
+                        rand_seed: int = 42, **kwargs):
     """
     Parameters
     ----------
@@ -70,13 +62,15 @@ def generate_train_dsprite(n_sample: int,
         size of data
     rand_seed : int
         random seed
+
+    Returns
+    -------
+    train_data : TrainDataSet
     """
     with FileLock("./data.lock"):
         dataset_zip = np.load(DATA_PATH.joinpath("dsprites_ndarray_co1sh3sc6or40x32y32_64x64.npz"),
                               allow_pickle=True, encoding="bytes")
-
-
-    weights = cal_weight()
+        weights = np.load(DATA_PATH.joinpath("dsprite_mat.npy"))
 
     imgs = dataset_zip['imgs']
     latents_values = dataset_zip['latents_values']
